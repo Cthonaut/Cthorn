@@ -24,6 +24,7 @@ class Application
   public:
     bool enableValidationLayers;
     std::vector<const char *> validationLayers;
+    std::vector<const char *> deviceExtensions;
 
     void run();
 };

@@ -18,6 +18,11 @@ void Application::initVulkan()
     {
         device.setupDebugMessenger();
     }
+    if (SDL_Vulkan_CreateSurface(window, device.instance, &device.surface) != SDL_TRUE)
+    {
+        throw std::runtime_error("failed to create surface");
+    }
+    device.selectGPU(deviceExtensions);
     SDL_Log("Initializing sdl errors: %s", SDL_GetError());
 }
 
