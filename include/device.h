@@ -12,6 +12,7 @@
         throw std::runtime_error("Error at " + std::string(__FILE__) + ":" + std::to_string(__LINE__));                \
     }
 
+#include <algorithm>
 #include <iostream>
 #include <optional>
 #include <set>
@@ -24,17 +25,6 @@
 #include <SDL2/SDL_vulkan.h>
 #include <vulkan/vulkan.h>
 
-struct QueueFamilyIndices
-{
-    std::optional<uint32_t> graphicsFamily;
-    std::optional<uint32_t> presentFamily;
-
-    bool isComplete()
-    {
-        return graphicsFamily.has_value() && presentFamily.has_value();
-    }
-};
-
 namespace Cthorn
 {
 class Device
@@ -42,26 +32,34 @@ class Device
   private:
     std::vector<const char *> getRequiredExtensions(SDL_Window *window, bool enableValidationLayers);
 
-    bool checkValidationLayerSupport(const std::vector<const char *> validationLayers);
-    bool extensionSupport(const std::vector<const char *> deviceExtensions, VkPhysicalDevice device);
-    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+    bool extensionSupport(VkPhysicalDevice device);
+    bool getQueueFamilies(VkPhysicalDevice device, std::vector<uint32_t> *queueFamilies);
 
   public:
     VkDebugUtilsMessengerEXT debugMessenger;
     VkInstance instance;
     VkSurfaceKHR surface;
-    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    VkPhysicalDevice phyDevice;
+    VkDevice logDevice;
+    VkQueue graphicsQueue;
+    VkQueue presentQueue;
 
-    void createInstance(SDL_Window *window, const std::vector<const char *> validationLayers,
-                        bool enableValidationLayers);
+    bool useVL = false;
+    std::vector<const char *> VL;
+    std::vector<const char *> deviceExt;
+
+    PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT;
+    PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT;
+
+    void initInstance(SDL_Window *window);
     void setupDebugMessenger();
-    void selectGPU(const std::vector<const char *> deviceExtensions);
-    void cleanupDebugMessenger();
+    void selectGPU();
+    void initLogDevice();
     void cleanup();
 };
 
-static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                                                    VkDebugUtilsMessageTypeFlagsEXT messageType,
-                                                    const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
-                                                    void *pUserData);
+static VKAPI_ATTR VkBool32 VKAPI_CALL debugMessage(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                                   VkDebugUtilsMessageTypeFlagsEXT messageType,
+                                                   const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
+                                                   void *pUserData);
 } // namespace Cthorn

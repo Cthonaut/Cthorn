@@ -9,9 +9,9 @@ int main()
 {
     Cthorn::Application app;
 
-    app.enableValidationLayers = true;
-    app.validationLayers = validationLayers;
-    app.deviceExtensions = deviceExtensions;
+    app.device.useVL = true;
+    app.device.VL = validationLayers;
+    app.device.deviceExt = deviceExtensions;
 
     try
     {

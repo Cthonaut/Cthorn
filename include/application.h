@@ -14,7 +14,6 @@ class Application
 {
   private:
     SDL_Window *window;
-    Device device;
 
     void initSdl2();
     void initVulkan();
@@ -22,9 +21,7 @@ class Application
     void cleanup();
 
   public:
-    bool enableValidationLayers;
-    std::vector<const char *> validationLayers;
-    std::vector<const char *> deviceExtensions;
+    Device device;
 
     void run();
 };

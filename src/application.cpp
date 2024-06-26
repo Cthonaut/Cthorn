@@ -5,7 +5,7 @@ namespace Cthorn
 
 void Application::initSdl2()
 {
-    SDL_Init(SDL_INIT_VIDEO);
+    CHECK(!SDL_Init(SDL_INIT_VIDEO));
     SDL_Vulkan_LoadLibrary(nullptr);
     window = SDL_CreateWindow("Vulkan", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 360,
                               SDL_WINDOW_SHOWN | SDL_WINDOW_VULKAN);
@@ -13,17 +13,16 @@ void Application::initSdl2()
 
 void Application::initVulkan()
 {
-    device.createInstance(window, validationLayers, enableValidationLayers);
-    if (enableValidationLayers)
+    std::sort(device.VL.begin(), device.VL.end());
+    std::sort(device.deviceExt.begin(), device.deviceExt.end());
+    device.initInstance(window);
+    if (device.useVL)
     {
         device.setupDebugMessenger();
     }
-    if (SDL_Vulkan_CreateSurface(window, device.instance, &device.surface) != SDL_TRUE)
-    {
-        throw std::runtime_error("failed to create surface");
-    }
-    device.selectGPU(deviceExtensions);
-    SDL_Log("Initializing sdl errors: %s", SDL_GetError());
+    CHECK(SDL_Vulkan_CreateSurface(window, device.instance, &device.surface))
+    device.selectGPU();
+    device.initLogDevice();
 }
 
 void Application::loop()
@@ -51,15 +50,14 @@ void Application::run()
 
 void Application::cleanup()
 {
-    if (enableValidationLayers)
+    if (device.useVL)
     {
-        device.cleanupDebugMessenger();
+        device.vkDestroyDebugUtilsMessengerEXT(device.instance, device.debugMessenger, nullptr);
     }
     device.cleanup();
     SDL_DestroyWindow(window);
     SDL_Vulkan_UnloadLibrary();
     SDL_Quit();
-    SDL_Log("Closing sdl errors: %s", SDL_GetError());
 }
 
 } // namespace Cthorn
