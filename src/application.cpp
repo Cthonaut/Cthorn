@@ -23,6 +23,7 @@ void Application::initVulkan()
     CHECK(SDL_Vulkan_CreateSurface(window, device.instance, &device.surface))
     device.selectGPU();
     device.initLogDevice();
+    device.initSwapChain(window);
 }
 
 void Application::loop()

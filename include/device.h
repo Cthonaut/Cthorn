@@ -41,12 +41,16 @@ class Device
     VkSurfaceKHR surface;
     VkPhysicalDevice phyDevice;
     VkDevice logDevice;
+    VkSwapchainKHR swapChain;
     VkQueue graphicsQueue;
     VkQueue presentQueue;
 
     bool useVL = false;
     std::vector<const char *> VL;
     std::vector<const char *> deviceExt;
+    std::vector<VkImage> swapChainImages;
+    VkFormat swapChainImageFormat;
+    VkExtent2D swapChainExtent;
 
     PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT;
     PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT;
@@ -55,6 +59,7 @@ class Device
     void setupDebugMessenger();
     void selectGPU();
     void initLogDevice();
+    void initSwapChain(SDL_Window *window);
     void cleanup();
 };
 
