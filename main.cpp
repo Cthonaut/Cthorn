@@ -12,6 +12,8 @@ int main()
     app.device.useVL = true;
     app.device.VL = validationLayers;
     app.device.deviceExt = deviceExtensions;
+    app.vertShaderLocation = "shaders/vert.spv";
+    app.fragShaderLocation = "shaders/frag.spv";
 
     try
     {

@@ -1,4 +1,6 @@
 #include "../include/application.h"
+#include <cstdlib>
+#include <vulkan/vulkan_core.h>
 
 namespace Cthorn
 {
@@ -25,6 +27,10 @@ void Application::initVulkan()
     device.initLogDevice();
     device.initSwapChain(window);
     device.initImageViews();
+
+    graphics.device = device;
+    graphics.shaders.push_back(graphics.initShader(vertShaderLocation.data(), VK_SHADER_STAGE_VERTEX_BIT));
+    graphics.shaders.push_back(graphics.initShader(fragShaderLocation.data(), VK_SHADER_STAGE_FRAGMENT_BIT));
 }
 
 void Application::loop()
@@ -52,10 +58,11 @@ void Application::run()
 
 void Application::cleanup()
 {
+    graphics.DestroyShaders();
+
     if (device.useVL)
-    {
         device.vkDestroyDebugUtilsMessengerEXT(device.instance, device.debugMessenger, nullptr);
-    }
+
     device.cleanupSwapChain();
     device.cleanup();
     SDL_DestroyWindow(window);

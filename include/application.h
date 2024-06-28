@@ -7,6 +7,7 @@
 #include <vulkan/vulkan.h>
 
 #include "device.h"
+#include "graphics.h"
 
 namespace Cthorn
 {
@@ -22,6 +23,10 @@ class Application
 
   public:
     Device device;
+    Graphics graphics;
+
+    std::string vertShaderLocation;
+    std::string fragShaderLocation;
 
     void run();
 };
