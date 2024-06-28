@@ -24,6 +24,7 @@ void Application::initVulkan()
     device.selectGPU();
     device.initLogDevice();
     device.initSwapChain(window);
+    device.initImageViews();
 }
 
 void Application::loop()
@@ -55,6 +56,7 @@ void Application::cleanup()
     {
         device.vkDestroyDebugUtilsMessengerEXT(device.instance, device.debugMessenger, nullptr);
     }
+    device.cleanupSwapChain();
     device.cleanup();
     SDL_DestroyWindow(window);
     SDL_Vulkan_UnloadLibrary();

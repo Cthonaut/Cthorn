@@ -44,6 +44,7 @@ class Device
     VkSwapchainKHR swapChain;
     VkQueue graphicsQueue;
     VkQueue presentQueue;
+    std::vector<VkImageView> swapChainImageViews;
 
     bool useVL = false;
     std::vector<const char *> VL;
@@ -60,6 +61,8 @@ class Device
     void selectGPU();
     void initLogDevice();
     void initSwapChain(SDL_Window *window);
+    void initImageViews();
+    void cleanupSwapChain();
     void cleanup();
 };
 

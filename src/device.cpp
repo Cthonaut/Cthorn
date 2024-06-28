@@ -191,10 +191,9 @@ void Device::initSwapChain(SDL_Window *window)
         imageCount = capabilities.maxImageCount;
     }
 
-    VkExtent2D extent;
     if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
     {
-        extent = capabilities.currentExtent;
+        swapChainExtent = capabilities.currentExtent;
     }
     else
     {
@@ -208,21 +207,23 @@ void Device::initSwapChain(SDL_Window *window)
         actualExtent.height =
             std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 
-        extent = actualExtent;
+        swapChainExtent = actualExtent;
     }
 
-    VkSurfaceFormatKHR supFormat;
+    VkColorSpaceKHR colorSpace;
     uint32_t availableFormatsCount;
     vkGetPhysicalDeviceSurfaceFormatsKHR(phyDevice, surface, &availableFormatsCount, nullptr);
     std::vector<VkSurfaceFormatKHR> availableFormats(availableFormatsCount);
     vkGetPhysicalDeviceSurfaceFormatsKHR(phyDevice, surface, &availableFormatsCount, availableFormats.data());
-    supFormat = availableFormats[0];
+    swapChainImageFormat = availableFormats[0].format;
+    colorSpace = availableFormats[0].colorSpace;
     for (int i = 0; i < availableFormatsCount; i++)
     {
         if (availableFormats[i].format == VK_FORMAT_B8G8R8A8_SRGB &&
             availableFormats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
         {
-            supFormat = availableFormats[i];
+            swapChainImageFormat = availableFormats[i].format;
+            colorSpace = availableFormats[i].colorSpace;
         }
     }
 
@@ -243,44 +244,74 @@ void Device::initSwapChain(SDL_Window *window)
         }
     }
 
-    VkSwapchainCreateInfoKHR createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    createInfo.surface = surface;
-    createInfo.minImageCount = imageCount;
-    createInfo.imageFormat = supFormat.format;
-    createInfo.imageColorSpace = supFormat.colorSpace;
-    createInfo.imageExtent = extent;
-    createInfo.imageArrayLayers = 1;
-    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    VkSwapchainCreateInfoKHR sufInfo{};
+    sufInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    sufInfo.surface = surface;
+    sufInfo.minImageCount = imageCount;
+    sufInfo.imageFormat = swapChainImageFormat;
+    sufInfo.imageColorSpace = colorSpace;
+    sufInfo.imageExtent = swapChainExtent;
+    sufInfo.imageArrayLayers = 1;
+    sufInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     if (queueFamilies.size() > 1)
     {
-        createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-        createInfo.queueFamilyIndexCount = 2;
-        createInfo.pQueueFamilyIndices = queueFamilies.data();
+        sufInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+        sufInfo.queueFamilyIndexCount = 2;
+        sufInfo.pQueueFamilyIndices = queueFamilies.data();
     }
     else
     {
-        createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        sufInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     }
-    createInfo.preTransform = capabilities.currentTransform;
-    createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    createInfo.presentMode = presentMode;
-    createInfo.clipped = VK_TRUE;
-    createInfo.oldSwapchain = VK_NULL_HANDLE;
+    sufInfo.preTransform = capabilities.currentTransform;
+    sufInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    sufInfo.presentMode = presentMode;
+    sufInfo.clipped = VK_TRUE;
+    sufInfo.oldSwapchain = VK_NULL_HANDLE;
 
-    VK_CHECK(vkCreateSwapchainKHR(logDevice, &createInfo, nullptr, &swapChain));
+    VK_CHECK(vkCreateSwapchainKHR(logDevice, &sufInfo, nullptr, &swapChain));
 
     vkGetSwapchainImagesKHR(logDevice, swapChain, &imageCount, nullptr);
     swapChainImages.resize(imageCount);
     vkGetSwapchainImagesKHR(logDevice, swapChain, &imageCount, swapChainImages.data());
+}
 
-    swapChainImageFormat = supFormat.format;
-    swapChainExtent = extent;
+void Device::initImageViews()
+{
+    swapChainImageViews.resize(swapChainImages.size());
+
+    VkImageViewCreateInfo viewInfo{};
+    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.format = swapChainImageFormat;
+    viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+    viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+    viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+    viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    viewInfo.subresourceRange.baseMipLevel = 0;
+    viewInfo.subresourceRange.levelCount = 1;
+    viewInfo.subresourceRange.baseArrayLayer = 0;
+    viewInfo.subresourceRange.layerCount = 1;
+    for (uint32_t i = 0; i < swapChainImages.size(); i++)
+    {
+        viewInfo.image = swapChainImages[i];
+        VK_CHECK(vkCreateImageView(logDevice, &viewInfo, nullptr, swapChainImageViews.data() + i));
+    }
+}
+
+void Device::cleanupSwapChain()
+{
+    for (size_t i = 0; i < swapChainImageViews.size(); i++)
+    {
+        vkDestroyImageView(logDevice, swapChainImageViews[i], nullptr);
+    }
+
+    vkDestroySwapchainKHR(logDevice, swapChain, nullptr);
 }
 
 void Device::cleanup()
 {
-    vkDestroySwapchainKHR(logDevice, swapChain, nullptr);
     vkDestroyDevice(logDevice, nullptr);
     vkDestroySurfaceKHR(instance, surface, nullptr);
     vkDestroyInstance(instance, nullptr);
