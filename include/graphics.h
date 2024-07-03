@@ -1,10 +1,7 @@
 #pragma once
 
 #include <fstream>
-#include <string>
-#include <vector>
-
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 
 #include "device.h"
 
@@ -13,19 +10,29 @@ namespace Cthorn
 
 struct Shader
 {
-    VkPipelineShaderStageCreateInfo shaderStageInfo;
-    VkShaderModule shaderModule;
+    VkPipelineShaderStageCreateInfo shaderStageInfo{};
+    VkShaderModule shaderModule{};
+};
+
+struct Pipeline
+{
+    VkPipelineLayout layout;
+    VkPipeline graphicsPipeline;
 };
 
 class Graphics
 {
-  private:
   public:
     Device device;
     std::vector<Shader> shaders;
+    Pipeline pipeline;
+    VkRenderPass renderPass;
 
     Shader initShader(const char *shaderLocation, VkShaderStageFlagBits shaderStage);
     void DestroyShaders();
+    void initRenderPass();
+    void initPipeline();
+    void cleanup();
 };
 
 } // namespace Cthorn

@@ -1,11 +1,5 @@
 #pragma once
 
-#include <stdexcept>
-#include <string>
-#include <vector>
-
-#include <vulkan/vulkan.h>
-
 #include "device.h"
 #include "graphics.h"
 
